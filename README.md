@@ -50,4 +50,4 @@ export ENABLED_SCRAPERS="rightmove,openrent"
  - Add zoopla 
  - Add frontend and deploy this properly to a website
  - Add image recognition to filter out worse flats
- - Add text recognition of the summary to filter out unwanted descriptions
+ - Add text recognition of the summary to filter desired descriptions (garage, floor dimensions, garden, etc.)
