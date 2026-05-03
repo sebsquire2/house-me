@@ -42,3 +42,12 @@ export ENABLED_SCRAPERS="rightmove,openrent"
 ## Notes
 
 - The Lambda stores seen property IDs in an S3 bucket created by the stack.
+
+## Future Work:
+
+ - Make SES emails not be picked up as spam
+ - Add openrent somehow potentially through proxy just no AWS IP
+ - Add zoopla 
+ - Add frontend and deploy this properly to a website
+ - Add image recognition to filter out worse flats
+ - Add text recognition of the summary to filter out unwanted descriptions
