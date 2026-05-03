@@ -1,0 +1,7 @@
+.aws-sam/
+.claude/
+.idea/
+__pycache__/
+*.py[cod]
+.env
+.env.*

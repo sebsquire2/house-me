@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Property alert scraper for Bristol rentals
+
+Parameters:
+  RecipientEmail:
+    Type: String
+  SenderEmail:
+    Type: String
+  EnabledScrapers:
+    Type: String
+    Default: rightmove
+    Description: Comma-separated list of scrapers to run. OpenRent is disabled by default because it blocks AWS IP ranges.
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 512
+    Runtime: python3.12
+    Environment:
+      Variables:
+        DEDUP_BUCKET: !Ref DedupBucket
+        RECIPIENT_EMAIL: !Ref RecipientEmail
+        SENDER_EMAIL: !Ref SenderEmail
+        ENABLED_SCRAPERS: !Ref EnabledScrapers
+
+Resources:
+  DedupBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "house-me-dedup-${AWS::Region}-${AWS::AccountId}"
+
+  ScraperFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handler.lambda_handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref DedupBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: "*"
+      Events:
+        ScheduleEvent:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: rate(5 minutes)
+            State: ENABLED
+
+Outputs:
+  ScraperFunctionArn:
+    Value: !GetAtt ScraperFunction.Arn
+  DedupBucketName:
+    Value: !Ref DedupBucket
