@@ -1,0 +1,15 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "house-me"
+resolve_s3 = true
+s3_prefix = "house-me"
+region = "eu-west-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+parameter_overrides = "RecipientEmail=\"squireseb@gmail.com\" SenderEmail=\"squireseb@gmail.com\" EnabledScrapers=\"rightmove\""
+image_repositories = []
+
+[default.global.parameters]
+region = "eu-west-2"

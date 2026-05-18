@@ -7,6 +7,9 @@ Parameters:
     Type: String
   SenderEmail:
     Type: String
+  GmailAppPassword:
+    Type: String
+    NoEcho: true
   EnabledScrapers:
     Type: String
     Default: rightmove
@@ -22,6 +25,7 @@ Globals:
         DEDUP_BUCKET: !Ref DedupBucket
         RECIPIENT_EMAIL: !Ref RecipientEmail
         SENDER_EMAIL: !Ref SenderEmail
+        GMAIL_APP_PASSWORD: !Ref GmailAppPassword
         ENABLED_SCRAPERS: !Ref EnabledScrapers
 
 Resources:
@@ -38,12 +42,6 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref DedupBucket
-        - Statement:
-            - Effect: Allow
-              Action:
-                - ses:SendEmail
-                - ses:SendRawEmail
-              Resource: "*"
       Events:
         ScheduleEvent:
           Type: ScheduleV2
