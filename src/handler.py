@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 BUCKET = os.environ["DEDUP_BUCKET"]
 RECIPIENT = os.environ["RECIPIENT_EMAIL"]
 SENDER = os.environ["SENDER_EMAIL"]
+GMAIL_APP_PASSWORD = os.environ["GMAIL_APP_PASSWORD"]
 AWS_REGION = os.environ.get("AWS_REGION", "eu-west-1")
 
 SCRAPERS = {
@@ -61,7 +62,7 @@ def lambda_handler(event, context):
     sent = 0
     for prop in new_properties:
         try:
-            emailer.send(prop, sender=SENDER, recipient=RECIPIENT, region=AWS_REGION)
+            emailer.send(prop, sender=SENDER, recipient=RECIPIENT, app_password=GMAIL_APP_PASSWORD)
             seen.add(prop.unique_id)
             sent += 1
         except Exception as e:

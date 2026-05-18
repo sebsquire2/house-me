@@ -1,5 +1,6 @@
 import logging
-import boto3
+import smtplib
+from email.mime.text import MIMEText
 from models import Property
 
 logger = logging.getLogger(__name__)
@@ -34,18 +35,16 @@ def _format_email(prop: Property) -> tuple[str, str]:
     return subject, body
 
 
-def send(prop: Property, sender: str, recipient: str, region: str = "eu-west-1") -> None:
+def send(prop: Property, sender: str, recipient: str, app_password: str, region: str = "eu-west-1") -> None:
     subject, body = _format_email(prop)
-    client = boto3.client("ses", region_name=region)
+    msg = MIMEText(body, "plain", "utf-8")
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = recipient
     try:
-        client.send_email(
-            Source=sender,
-            Destination={"ToAddresses": [recipient]},
-            Message={
-                "Subject": {"Data": subject, "Charset": "UTF-8"},
-                "Body": {"Text": {"Data": body, "Charset": "UTF-8"}},
-            },
-        )
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login(sender, app_password)
+            smtp.sendmail(sender, [recipient], msg.as_string())
         logger.info("Sent email for %s", prop.unique_id)
     except Exception as e:
         logger.error("Failed to send email for %s: %s", prop.unique_id, e)
