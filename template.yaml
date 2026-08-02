@@ -7,9 +7,13 @@ Parameters:
     Type: String
   SenderEmail:
     Type: String
-  GmailAppPassword:
+  GmailPasswordParam:
     Type: String
-    NoEcho: true
+    Default: /house-me/gmail-app-password
+    Description: >-
+      SSM Parameter Store path holding the Gmail app password as a SecureString.
+      Only the path travels through CloudFormation; the function fetches and
+      decrypts the value at runtime.
   EnabledScrapers:
     Type: String
     Default: rightmove
@@ -25,7 +29,7 @@ Globals:
         DEDUP_BUCKET: !Ref DedupBucket
         RECIPIENT_EMAIL: !Ref RecipientEmail
         SENDER_EMAIL: !Ref SenderEmail
-        GMAIL_APP_PASSWORD: !Ref GmailAppPassword
+        GMAIL_PASSWORD_PARAM: !Ref GmailPasswordParam
         ENABLED_SCRAPERS: !Ref EnabledScrapers
 
 Resources:
@@ -42,6 +46,18 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref DedupBucket
+        # SSMParameterReadPolicy wants the name without its leading slash.
+        - SSMParameterReadPolicy:
+            ParameterName: house-me/gmail-app-password
+        # The AWS-managed aws/ssm key delegates authorisation to IAM, so
+        # WithDecryption=True fails with AccessDenied without this.
+        - Statement:
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: "*"
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub "ssm.${AWS::Region}.amazonaws.com"
       Events:
         ScheduleEvent:
           Type: ScheduleV2
