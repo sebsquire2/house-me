@@ -5,11 +5,16 @@ stack_name = "house-me"
 resolve_s3 = true
 s3_prefix = "house-me"
 region = "eu-west-2"
+# Pinned deliberately: without it, `sam deploy` targets whatever ambient
+# credentials point at, which is how this stack ended up in the Production
+# account rather than personal-services.
+profile = "services-admin"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 disable_rollback = true
-parameter_overrides = "RecipientEmail=\"squireseb@gmail.com\" SenderEmail=\"squireseb@gmail.com\" EnabledScrapers=\"rightmove\""
+parameter_overrides = "RecipientEmail=\"squireseb@gmail.com\" SenderEmail=\"squireseb@gmail.com\" EnabledScrapers=\"rightmove\" GmailPasswordParam=\"/house-me/gmail-app-password\""
 image_repositories = []
 
 [default.global.parameters]
 region = "eu-west-2"
+profile = "services-admin"

@@ -1,20 +1,32 @@
 import logging
 import os
 
+import boto3
+
 import dedup
 import emailer
 import rightmove
 import openrent
 import zoopla
 
+# Lambda's runtime installs a root handler before user code runs, so
+# basicConfig() is a no-op there and every logger.info() call is silently
+# dropped. Set the level on the root logger explicitly instead.
 logging.basicConfig(level=logging.INFO)
+logging.getLogger().setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 BUCKET = os.environ["DEDUP_BUCKET"]
 RECIPIENT = os.environ["RECIPIENT_EMAIL"]
 SENDER = os.environ["SENDER_EMAIL"]
-GMAIL_APP_PASSWORD = os.environ["GMAIL_APP_PASSWORD"]
 AWS_REGION = os.environ.get("AWS_REGION", "eu-west-1")
+
+# Fetched at module level, so this is one SSM call per cold start rather than
+# one per invocation. The secret is never passed through CloudFormation, which
+# would leave it readable via cloudformation:GetTemplate.
+GMAIL_APP_PASSWORD = boto3.client("ssm").get_parameter(
+    Name=os.environ["GMAIL_PASSWORD_PARAM"], WithDecryption=True
+)["Parameter"]["Value"]
 
 SCRAPERS = {
     "rightmove": rightmove,
@@ -56,6 +68,7 @@ def lambda_handler(event, context):
         except Exception as e:
             logger.error("Scraper %s failed: %s", scraper.__name__, e)
 
+    logger.info("Scraped %d properties total", len(all_properties))
     new_properties = dedup.filter_new(all_properties, seen)
     logger.info("Found %d new properties", len(new_properties))
 
@@ -72,4 +85,12 @@ def lambda_handler(event, context):
         dedup.save_seen(BUCKET, seen)
         logger.info("Saved updated seen list (%d total)", len(seen))
 
-    return {"new_properties": sent, "total_seen": len(seen)}
+    # "sent" and "found" are deliberately separate: a failed send leaves the
+    # property unsaved, so reporting only the sent count makes a working
+    # scraper with broken email look identical to a scraper returning nothing.
+    return {
+        "scraped": len(all_properties),
+        "found_new": len(new_properties),
+        "sent": sent,
+        "total_seen": len(seen),
+    }

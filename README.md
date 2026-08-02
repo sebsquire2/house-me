@@ -10,7 +10,7 @@ Rightmove's filters don't allow you to search the date you want to move. The new
 - Scrapes supported property sources for Bristol rentals.
 - Filters listings to the configured criteria in the scraper modules.
 - Deduplicates seen listings in S3.
-- Sends email alerts with Amazon SES.
+- Sends email alerts over Gmail SMTP.
 
 ## Current source status
 
@@ -24,7 +24,13 @@ Prerequisites:
 
 - AWS CLI configured
 - AWS SAM CLI installed
-- SES sender verified in your AWS account
+- A Gmail app password stored as an SSM SecureString. The function reads it at
+  runtime, so it never passes through CloudFormation:
+
+  ```bash
+  aws ssm put-parameter --name /house-me/gmail-app-password \
+    --value '<gmail app password>' --type SecureString --region eu-west-2
+  ```
 
 ```bash
 export RECIPIENT_EMAIL="you@example.com"
@@ -32,6 +38,10 @@ export SENDER_EMAIL="you@example.com"
 export ENABLED_SCRAPERS="rightmove"
 ./deploy.sh
 ```
+
+`deploy.sh` defaults to the `services-admin` profile and checks the SSM
+parameter exists before deploying. Override with `AWS_PROFILE=... ./deploy.sh`
+if you genuinely mean a different account.
 
 If you run outside AWS and have a network path that OpenRent accepts, you can opt in explicitly:
 
