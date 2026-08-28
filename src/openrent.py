@@ -38,7 +38,7 @@ HEADERS = {
 SEARCH_PARAMS = {
     "term": "bristol",
     "prices_min": "1000",
-    "prices_max": "1400",
+    "prices_max": "1500",
     "bedrooms_min": "1",
     "bedrooms_max": "3",
     "isLive": "true",
@@ -167,7 +167,7 @@ def scrape() -> list[Property]:
                 continue
             seen_ids.add(pid)
 
-            if not (1000 <= card["price"] <= 1400):
+            if not (1000 <= card["price"] <= 1500):
                 continue
             if not (1 <= card["bedrooms"] <= 3):
                 continue
