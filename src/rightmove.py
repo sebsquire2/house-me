@@ -40,7 +40,7 @@ SEARCH_PARAMS = {
     "minBedrooms": "1",
     "maxBedrooms": "3",
     "minPrice": "1000",
-    "maxPrice": "1400",
+    "maxPrice": "1500",
     "propertyTypes": "flat",
     "sortType": "6",
 }
@@ -57,7 +57,7 @@ def _get_build_id() -> Optional[str]:
     url = (
         f"{BASE_URL}/property-to-rent/find.html"
         "?locationIdentifier=OUTCODE%5E292&minBedrooms=1&maxBedrooms=3"
-        "&minPrice=1000&maxPrice=1400&propertyTypes=flat&sortType=6"
+        "&minPrice=1000&maxPrice=1500&propertyTypes=flat&sortType=6"
     )
     try:
         resp = _get(url)
@@ -161,7 +161,7 @@ def scrape() -> list[Property]:
                 prop_url = prop_url.split("#")[0]  # strip fragment
 
                 # Filter here to avoid unnecessary page fetches
-                if not (1000 <= price <= 1400):
+                if not (1000 <= price <= 1500):
                     continue
                 if not (1 <= bedrooms <= 3):
                     continue
