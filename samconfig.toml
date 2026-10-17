@@ -12,7 +12,7 @@ profile = "services-admin"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 disable_rollback = true
-parameter_overrides = "RecipientEmail=\"you@example.com\" SenderEmail=\"you@example.com\" EnabledScrapers=\"rightmove\" GmailPasswordParam=\"/house-me/gmail-app-password\""
+parameter_overrides = "EnabledScrapers=\"rightmove\" GmailPasswordParam=\"/house-me/gmail-app-password\""
 image_repositories = []
 
 [default.global.parameters]
