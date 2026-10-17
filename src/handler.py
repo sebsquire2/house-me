@@ -73,13 +73,22 @@ def lambda_handler(event, context):
     logger.info("Found %d new properties", len(new_properties))
 
     sent = 0
-    for prop in new_properties:
+    if new_properties:
+        # Stop at the first failure rather than retrying each property: unsent
+        # properties are retried next run anyway, and a login per property every
+        # 5 minutes is what got Gmail throttling us after the app password died.
+        # The "Failed to send email" text is matched by the CloudWatch alarm.
         try:
-            emailer.send(prop, sender=SENDER, recipient=RECIPIENT, app_password=GMAIL_APP_PASSWORD)
-            seen.add(prop.unique_id)
-            sent += 1
+            with emailer.connect(SENDER, GMAIL_APP_PASSWORD) as smtp:
+                for prop in new_properties:
+                    emailer.send(smtp, prop, sender=SENDER, recipient=RECIPIENT)
+                    seen.add(prop.unique_id)
+                    sent += 1
         except Exception as e:
-            logger.error("Failed to process %s: %s", prop.unique_id, e)
+            logger.error(
+                "Failed to send email (%d of %d unsent): %s",
+                len(new_properties) - sent, len(new_properties), e,
+            )
 
     if sent > 0:
         dedup.save_seen(BUCKET, seen)

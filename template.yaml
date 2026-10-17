@@ -65,6 +65,46 @@ Resources:
             ScheduleExpression: rate(5 minutes)
             State: ENABLED
 
+  # The handler swallows send failures so the Lambda never errors, which is
+  # how a revoked Gmail app password went unnoticed for two weeks. Count the
+  # failure log line instead and alarm on that.
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref RecipientEmail
+
+  EmailFailureMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ScraperFunction}"
+      FilterPattern: '"Failed to send email"'
+      MetricTransformations:
+        - MetricNamespace: HouseMe
+          MetricName: EmailSendFailures
+          MetricValue: "1"
+          DefaultValue: 0
+
+  # Sends fail at most once per run, so a broken mailer scores ~12/hour while
+  # a one-off Gmail "server busy" scores 1 and clears on the next run.
+  EmailFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: house-me email sends are failing (check the Gmail app password)
+      Namespace: HouseMe
+      MetricName: EmailSendFailures
+      Statistic: Sum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 6
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertTopic
+      OKActions:
+        - !Ref AlertTopic
+
 Outputs:
   ScraperFunctionArn:
     Value: !GetAtt ScraperFunction.Arn

@@ -1,5 +1,7 @@
 import logging
 import smtplib
+from collections.abc import Iterator
+from contextlib import contextmanager
 from email.mime.text import MIMEText
 from models import Property
 
@@ -35,17 +37,19 @@ def _format_email(prop: Property) -> tuple[str, str]:
     return subject, body
 
 
-def send(prop: Property, sender: str, recipient: str, app_password: str, region: str = "eu-west-1") -> None:
+@contextmanager
+def connect(sender: str, app_password: str) -> Iterator[smtplib.SMTP_SSL]:
+    """One Gmail login per run, shared by every send in it."""
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(sender, app_password)
+        yield smtp
+
+
+def send(smtp: smtplib.SMTP_SSL, prop: Property, sender: str, recipient: str) -> None:
     subject, body = _format_email(prop)
     msg = MIMEText(body, "plain", "utf-8")
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = recipient
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            smtp.login(sender, app_password)
-            smtp.sendmail(sender, [recipient], msg.as_string())
-        logger.info("Sent email for %s", prop.unique_id)
-    except Exception as e:
-        logger.error("Failed to send email for %s: %s", prop.unique_id, e)
-        raise
+    smtp.sendmail(sender, [recipient], msg.as_string())
+    logger.info("Sent email for %s", prop.unique_id)

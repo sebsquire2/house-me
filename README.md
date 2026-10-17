@@ -52,6 +52,57 @@ export ENABLED_SCRAPERS="rightmove,openrent"
 ## Notes
 
 - The Lambda stores seen property IDs in an S3 bucket created by the stack.
+- A property is only marked as seen once its email sends, so failed sends are
+  retried on the next run rather than lost.
+
+## Monitoring
+
+The handler catches send failures, so the Lambda reports success (and zero
+`Errors`) even when no email is going out. Instead, every failed run logs one
+`Failed to send email` line, which a log metric filter counts as
+`HouseMe/EmailSendFailures`. `EmailFailureAlarm` emails `RecipientEmail` via SNS
+when there are 6+ failures in an hour (~half the runs), and again when it
+recovers. On a new stack, confirm the SNS subscription email or no alerts arrive.
+
+The function's return value (`scraped` / `found_new` / `sent`) is the quickest
+health check: `aws lambda invoke --function-name <fn> out.json && cat out.json`.
+
+## Troubleshooting
+
+### Emails stopped / `Failed to send email` alarm
+
+Most likely the Gmail app password has been revoked. **Changing your Google
+account password revokes all app passwords.** This happened on 2026-10-04 and
+went unnoticed until 2026-10-17 (before the alarm existed). Gmail tends to
+report it as `Connection unexpectedly closed` or `421 Server busy` rather than
+a clear auth error.
+
+1. Create a new app password at https://myaccount.google.com/apppasswords.
+2. Overwrite the SSM parameter (run in your own terminal so the secret stays
+   out of logs and transcripts):
+
+   ```bash
+   aws ssm put-parameter --name /house-me/gmail-app-password \
+     --value '<new app password>' --type SecureString --overwrite --region eu-west-2
+   ```
+
+3. Force a cold start. The password is read once per container, and the
+   5-minute schedule keeps containers warm, so the old value sticks until then:
+
+   ```bash
+   aws lambda update-function-configuration --function-name <fn> \
+     --region eu-west-2 --description "cold start $(date +%s)"
+   ```
+
+4. Invoke once and check `sent` matches `found_new`.
+
+### Accounts and credentials
+
+The stack lives in the `personal-services` account, eu-west-2,
+deployed via the `services-admin` SSO profile (`aws sso login --profile
+services-admin`). Ambient `AWS_ACCESS_KEY_ID`/`AWS_SESSION_TOKEN` env vars take
+precedence over `AWS_PROFILE`, so check `aws sts get-caller-identity` before
+deploying.
 
 ## Future Work:
 
