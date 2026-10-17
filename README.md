@@ -32,10 +32,16 @@ Prerequisites:
     --value '<gmail app password>' --type SecureString --region eu-west-2
   ```
 
+Put your settings in a `.env` file in the repo root (gitignored; `deploy.sh`
+loads it automatically), or export them in your shell:
+
 ```bash
-export RECIPIENT_EMAIL="you@example.com"
-export SENDER_EMAIL="you@example.com"
-export ENABLED_SCRAPERS="rightmove"
+RECIPIENT_EMAIL="you@example.com"
+SENDER_EMAIL="you@example.com"
+ENABLED_SCRAPERS="rightmove"
+```
+
+```bash
 ./deploy.sh
 ```
 

@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Personal settings (RECIPIENT_EMAIL etc.) live in a gitignored .env so they
+# stay out of the public repo.
+ENV_FILE="$(dirname "$0")/.env"
+if [[ -f "$ENV_FILE" ]]; then
+  set -a; source "$ENV_FILE"; set +a
+fi
+
 # Pinned so a deploy cannot land in whatever account ambient credentials happen
 # to point at — which is how this stack ended up in the Production account.
 export AWS_PROFILE="${AWS_PROFILE:-services-admin}"
